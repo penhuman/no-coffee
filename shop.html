@@ -100,8 +100,8 @@
 
         // 載入商品庫存
         document.addEventListener('DOMContentLoaded', function() {
-            // ✅ 已更新為 Cloudflare 公開網址
-            fetch('fetch('https://api.880coffee.com.tw/webhook/get-products')')
+            // ✅ 已修正：拿掉多餘的 fetch()
+            fetch('https://api.880coffee.com.tw/webhook/get-products')
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('loader').style.display = 'none';
@@ -118,4 +118,137 @@
                                     <p class="product-price">NT$ ${item.price}</p>
                                 </div>
                                 <div class="qty-controls">
-                                    <button type="button" class="qty-btn" onclick="update
+                                    <button type="button" class="qty-btn" onclick="updateCart('${item.name}', ${item.price}, -1, ${item.stock})">−</button>
+                                    <div class="qty-display" id="qty-${item.name}">0</div>
+                                    <button type="button" class="qty-btn" onclick="updateCart('${item.name}', ${item.price}, 1, ${item.stock})">+</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                })
+                .catch(error => {
+                    document.getElementById('loader').innerText = '❌ 讀取庫存失敗，請稍後再試。';
+                    console.error('Error fetching products:', error);
+                });
+        });
+
+        // 更新購物車數量
+        window.updateCart = function(name, price, change, maxStock) {
+            if (!cart[name]) cart[name] = { price: price, qty: 0 };
+            
+            let newQty = cart[name].qty + change;
+            
+            // 庫存防呆檢查
+            if (newQty < 0) newQty = 0;
+            if (newQty > maxStock) {
+                alert(`不好意思，「${name}」目前庫存只剩 ${maxStock} 份喔！`);
+                newQty = maxStock;
+            }
+            
+            cart[name].qty = newQty;
+            if (cart[name].qty === 0) delete cart[name]; 
+            
+            // 更新卡片上的數字
+            document.getElementById(`qty-${name}`).innerText = newQty;
+            
+            renderCart(); 
+        };
+
+        // 渲染購物車明細與總額
+        function renderCart() {
+            const cartContainer = document.getElementById('cart-container');
+            const submitBtn = document.getElementById('submitBtn');
+            let html = '';
+            let totalAmount = 0;
+            let totalItems = 0;
+
+            for (const [name, item] of Object.entries(cart)) {
+                const subtotal = item.price * item.qty;
+                totalAmount += subtotal;
+                totalItems += item.qty;
+                html += `
+                    <div class="cart-item">
+                        <span>${name} x ${item.qty}</span>
+                        <span>$${subtotal}</span>
+                    </div>
+                `;
+            }
+
+            if (totalItems === 0) {
+                cartContainer.innerHTML = '<div style="text-align:center; color:#9E9E9E; font-size:14px;">尚未選擇商品</div>';
+                submitBtn.disabled = true;
+                submitBtn.innerText = "請先選擇商品";
+            } else {
+                html += `
+                    <div class="cart-total">
+                        <span>總金額</span>
+                        <span>NT$ ${totalAmount}</span>
+                    </div>
+                `;
+                cartContainer.innerHTML = html;
+                submitBtn.disabled = false;
+                submitBtn.innerText = `確認送出 (共 $${totalAmount})`;
+            }
+        }
+
+        // 送出多筆訂單 (改用「排隊逐筆發送」避免 n8n 及 LINE 塞車鎖死)
+        document.getElementById('orderForm').addEventListener('submit', async function(e) {
+            e.preventDefault(); 
+            
+            const btn = document.getElementById('submitBtn');
+            const msg = document.getElementById('message');
+            btn.innerText = "訂單傳送中(請勿關閉)...";
+            btn.disabled = true;
+
+            const customerName = document.getElementById('name').value;
+            const customerContact = document.getElementById('contact').value;
+
+            let allOk = true;
+
+            // 用迴圈讓訂單排隊，一筆一筆送
+            for (const [productName, itemData] of Object.entries(cart)) {
+                const orderData = {
+                    customer_name: customerName,
+                    customer_contact: customerContact,
+                    product_name: productName,
+                    quantity: itemData.qty
+                };
+                
+                try {
+                    // ✅ 這裡確認是 new-order 沒錯
+                    const response = await fetch('https://api.880coffee.com.tw/webhook/new-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(orderData)
+                    });
+                    
+                    if (!response.ok) allOk = false;
+                    
+                    // 關鍵魔法：每送一筆，稍微停頓 1.5 秒，讓系統與 LINE 有時間消化
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
+                } catch (error) {
+                    allOk = false;
+                }
+            }
+
+            // 結算最終結果
+            if(allOk) {
+                msg.innerHTML = '<span style="color: #2E7D32;">✅ 訂單已成功送出！請等候取貨通知。</span>';
+                document.getElementById('orderForm').reset();
+                cart = {}; 
+                document.querySelectorAll('.qty-display').forEach(el => el.innerText = "0");
+                renderCart();
+            } else {
+                msg.innerHTML = '<span style="color: #C62828;">❌ 部分訂單傳送失敗，請聯繫我們。</span>';
+            }
+            
+            // 恢復按鈕狀態
+            if(Object.keys(cart).length > 0 || !allOk) {
+                btn.disabled = false;
+                btn.innerText = "重新送出";
+            }
+        });
+    </script>
+</body>
+</html>
