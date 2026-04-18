@@ -101,7 +101,7 @@
         // 載入商品庫存
         document.addEventListener('DOMContentLoaded', function() {
             // ✅ 已更新為 Cloudflare 公開網址
-            fetch('https://api.880coffee.com.tw/webhook/new-order')
+            fetch('fetch('https://api.880coffee.com.tw/webhook/get-products')')
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('loader').style.display = 'none';
