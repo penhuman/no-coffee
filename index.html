@@ -2,253 +2,126 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>捌捌零咖啡 | 線上預訂</title>
-    <style>
-        /* 🎨 職人色系與基礎設定 */
-        :root { --bg-color: #F7F5F0; --primary: #6D4C41; --card-bg: #FFFFFF; --text-main: #3E2723; }
-        body { font-family: 'Helvetica Neue', 'PingFang TC', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 50px; }
-        
-        .header { background-color: var(--primary); color: white; text-align: center; padding: 30px 20px 40px; border-radius: 0 0 24px 24px; box-shadow: 0 4px 15px rgba(109, 76, 65, 0.2); }
-        .header h1 { margin: 0; font-size: 26px; }
-        .header p { margin: 8px 0 0; font-size: 14px; opacity: 0.8; }
-
-        .container { max-width: 450px; margin: -25px auto 0; padding: 0 20px; position: relative; z-index: 10; }
-        .section-title { font-size: 16px; font-weight: bold; margin-bottom: 12px; color: var(--primary); }
-        
-        /* 🍞 商品卡片 (加入加減按鈕) */
-        .product-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 25px; }
-        .product-card { 
-            background: var(--card-bg); border-radius: 16px; padding: 15px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between;
-        }
-        .product-info { flex-grow: 1; }
-        .product-name { font-size: 16px; font-weight: bold; margin: 0 0 5px; }
-        .product-price { font-size: 14px; color: #8D6E63; margin: 0; }
-        .stock-tag { font-size: 11px; background: #EEEEEE; padding: 3px 8px; border-radius: 10px; color: #757575; margin-left: 8px; }
-        .stock-tag.low { background: #FFEBEE; color: #D32F2F; }
-        
-        /* 數控按鈕區 */
-        .qty-controls { display: flex; align-items: center; background: #F5F5F5; border-radius: 20px; padding: 5px; }
-        .qty-btn { 
-            width: 30px; height: 30px; border: none; background: white; border-radius: 50%; 
-            font-size: 16px; font-weight: bold; color: var(--primary); cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .qty-btn:active { transform: scale(0.9); }
-        .qty-btn:disabled { color: #CCC; cursor: not-allowed; box-shadow: none; }
-        .qty-display { width: 30px; text-align: center; font-weight: bold; font-size: 15px; }
-
-        /* 🛒 購物車明細區 */
-        .cart-card { background: #FAF6F4; border: 2px dashed #D7CCC8; border-radius: 16px; padding: 15px; margin-bottom: 20px; }
-        .cart-item { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #EFEBE9; }
-        .cart-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .cart-total { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; color: var(--primary); margin-top: 15px; padding-top: 15px; border-top: 2px solid #D7CCC8; }
-
-        /* 📝 表單區 */
-        .form-card { background: var(--card-bg); border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-size: 13px; font-weight: bold; color: #795548; margin-bottom: 6px; }
-        input { width: 100%; padding: 14px; border: 1px solid #E0E0E0; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        
-        button.submit-btn { 
-            width: 100%; padding: 16px; background-color: var(--primary); color: white; 
-            border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer;
-        }
-        button.submit-btn:disabled { background-color: #BCAAA4; cursor: not-allowed; }
-        #message { margin-top: 15px; text-align: center; font-weight: bold; }
-    </style>
-</head>
-<body>
-
-    <div class="header">
-        <h1>捌捌零咖啡</h1>
-        <p>手工酸種麵包 ‧ 限量出爐</p>
-    </div>
-
-    <div class="container">
-        
-        <div class="section-title">今日出爐品項</div>
-        <div id="loader" style="text-align:center; padding:20px; color:#8D6E63;">⏳ 看一下Ted做了些什麼吃的...</div>
-        <div class="product-grid" id="product-grid">
-            </div>
-
-        <div class="section-title">🛒 購物車明細</div>
-        <div class="cart-card" id="cart-container">
-            <div style="text-align:center; color:#9E9E9E; font-size:14px;">尚未選擇商品</div>
-        </div>
-
-        <div class="form-card">
-            <div class="section-title">取貨資訊</div>
-            <form id="orderForm">
-                <div class="form-group">
-                    <label>您的姓名</label>
-                    <input type="text" id="name" required>
-                </div>
-                <div class="form-group">
-                    <label>LINE ID 或 手機號碼</label>
-                    <input type="text" id="contact" required>
-                </div>
-                <button type="submit" id="submitBtn" class="submit-btn" disabled>請先選擇商品</button>
-            </form>
-            <div id="message"></div>
-        </div>
-    </div>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>880 Coffee | 經典無花果酸種歐包</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script>
-        // 核心邏輯：購物車記憶體
-        let cart = {}; 
-
-        // 載入商品庫存
-        document.addEventListener('DOMContentLoaded', function() {
-            // ✅ 已修正：拿掉多餘的 fetch()
-            fetch('https://api.880coffee.com.tw/webhook/get-products')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('loader').style.display = 'none';
-                    const grid = document.getElementById('product-grid');
-                    
-                    data.forEach(item => {
-                        const stockClass = item.stock < 3 ? 'low' : '';
-                        const icon = item.name.includes("咖啡") ? "☕️" : "🍞";
-                        
-                        grid.innerHTML += `
-                            <div class="product-card">
-                                <div class="product-info">
-                                    <p class="product-name">${icon} ${item.name} <span class="stock-tag ${stockClass}">剩 ${item.stock}</span></p>
-                                    <p class="product-price">NT$ ${item.price}</p>
-                                </div>
-                                <div class="qty-controls">
-                                    <button type="button" class="qty-btn" onclick="updateCart('${item.name}', ${item.price}, -1, ${item.stock})">−</button>
-                                    <div class="qty-display" id="qty-${item.name}">0</div>
-                                    <button type="button" class="qty-btn" onclick="updateCart('${item.name}', ${item.price}, 1, ${item.stock})">+</button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                })
-                .catch(error => {
-                    document.getElementById('loader').innerText = '❌ 讀取庫存失敗，請稍後再試。';
-                    console.error('Error fetching products:', error);
-                });
-        });
-
-        // 更新購物車數量
-        window.updateCart = function(name, price, change, maxStock) {
-            if (!cart[name]) cart[name] = { price: price, qty: 0 };
-            
-            let newQty = cart[name].qty + change;
-            
-            // 庫存防呆檢查
-            if (newQty < 0) newQty = 0;
-            if (newQty > maxStock) {
-                alert(`不好意思，「${name}」目前庫存只剩 ${maxStock} 份喔！`);
-                newQty = maxStock;
-            }
-            
-            cart[name].qty = newQty;
-            if (cart[name].qty === 0) delete cart[name]; 
-            
-            // 更新卡片上的數字
-            document.getElementById(`qty-${name}`).innerText = newQty;
-            
-            renderCart(); 
-        };
-
-        // 渲染購物車明細與總額
-        function renderCart() {
-            const cartContainer = document.getElementById('cart-container');
-            const submitBtn = document.getElementById('submitBtn');
-            let html = '';
-            let totalAmount = 0;
-            let totalItems = 0;
-
-            for (const [name, item] of Object.entries(cart)) {
-                const subtotal = item.price * item.qty;
-                totalAmount += subtotal;
-                totalItems += item.qty;
-                html += `
-                    <div class="cart-item">
-                        <span>${name} x ${item.qty}</span>
-                        <span>$${subtotal}</span>
-                    </div>
-                `;
-            }
-
-            if (totalItems === 0) {
-                cartContainer.innerHTML = '<div style="text-align:center; color:#9E9E9E; font-size:14px;">尚未選擇商品</div>';
-                submitBtn.disabled = true;
-                submitBtn.innerText = "請先選擇商品";
-            } else {
-                html += `
-                    <div class="cart-total">
-                        <span>總金額</span>
-                        <span>NT$ ${totalAmount}</span>
-                    </div>
-                `;
-                cartContainer.innerHTML = html;
-                submitBtn.disabled = false;
-                submitBtn.innerText = `確認送出 (共 $${totalAmount})`;
-            }
-        }
-
-        // 送出多筆訂單 (改用「排隊逐筆發送」避免 n8n 及 LINE 塞車鎖死)
-        document.getElementById('orderForm').addEventListener('submit', async function(e) {
-            e.preventDefault(); 
-            
-            const btn = document.getElementById('submitBtn');
-            const msg = document.getElementById('message');
-            btn.innerText = "訂單傳送中(請勿關閉)...";
-            btn.disabled = true;
-
-            const customerName = document.getElementById('name').value;
-            const customerContact = document.getElementById('contact').value;
-
-            let allOk = true;
-
-            // 用迴圈讓訂單排隊，一筆一筆送
-            for (const [productName, itemData] of Object.entries(cart)) {
-                const orderData = {
-                    customer_name: customerName,
-                    customer_contact: customerContact,
-                    product_name: productName,
-                    quantity: itemData.qty
-                };
-                
-                try {
-                    // ✅ 這裡確認是 new-order 沒錯
-                    const response = await fetch('https://api.880coffee.com.tw/webhook/new-order', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(orderData)
-                    });
-                    
-                    if (!response.ok) allOk = false;
-                    
-                    // 關鍵魔法：每送一筆，稍微停頓 1.5 秒，讓系統與 LINE 有時間消化
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    
-                } catch (error) {
-                    allOk = false;
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Noto Serif TC"', 'serif'],
+                    },
+                    colors: {
+                        stone: {
+                            50: '#fafaf9',
+                            100: '#f5f5f4',
+                            800: '#292524',
+                            900: '#1c1917',
+                        }
+                    }
                 }
             }
-
-            // 結算最終結果
-            if(allOk) {
-                msg.innerHTML = '<span style="color: #2E7D32;">✅ 訂單已成功送出！請等候取貨通知。</span>';
-                document.getElementById('orderForm').reset();
-                cart = {}; 
-                document.querySelectorAll('.qty-display').forEach(el => el.innerText = "0");
-                renderCart();
-            } else {
-                msg.innerHTML = '<span style="color: #C62828;">❌ 部分訂單傳送失敗，請聯繫我們。</span>';
-            }
-            
-            // 恢復按鈕狀態
-            if(Object.keys(cart).length > 0 || !allOk) {
-                btn.disabled = false;
-                btn.innerText = "重新送出";
-            }
-        });
+        }
     </script>
+    <style>
+        body {
+            background-color: #fafaf9; /* 溫潤的紙張色調 */
+        }
+        /* 隱藏捲軸但保持可滾動 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="font-serif text-stone-800 antialiased selection:bg-stone-200">
+
+    <header class="w-full py-8 px-6 md:px-12 flex justify-between items-center border-b border-stone-200">
+        <div class="text-2xl font-bold tracking-widest text-stone-900">880 COFFEE</div>
+        <nav class="hidden md:flex gap-8 text-sm tracking-widest text-stone-500">
+            <a href="#" class="hover:text-stone-900 transition-colors">珈琲豆</a>
+            <a href="#" class="text-stone-900 border-b border-stone-900 pb-1">酸種麵包</a>
+            <a href="#" class="hover:text-stone-900 transition-colors">關於我們</a>
+        </nav>
+        <div class="text-sm tracking-widest hover:text-stone-500 cursor-pointer">
+            購物車 (0)
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 md:px-12 py-16 md:py-24 grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-start">
+        
+        <div class="w-full aspect-[4/5] bg-stone-200 rounded-sm overflow-hidden relative">
+            <img src="https://images.unsplash.com/photo-1585478259715-876acc5be8eb?q=80&w=2000&auto=format&fit=crop" 
+                 alt="無花果酸種歐包" 
+                 class="w-full h-full object-cover grayscale-[20%] hover:grayscale-0 transition-all duration-700">
+        </div>
+
+        <div class="flex flex-col justify-center h-full">
+            <div class="mb-4 text-xs tracking-[0.2em] text-stone-400">ARTISAN SOURDOUGH</div>
+            <h1 class="text-3xl md:text-4xl font-medium tracking-wide mb-6 leading-snug">經典無花果酸種歐包</h1>
+            
+            <div class="text-2xl font-light mb-10 text-stone-600">NT$ 280</div>
+
+            <div class="prose prose-stone mb-12 text-stone-600 leading-loose tracking-wide text-sm md:text-base">
+                <p class="mb-4">
+                    時間是最好的調味料。以純水與麵粉，在菊島的微風中靜靜蘊育出的天然酵母。
+                    外殼烤至深邃的焦糖色澤，敲擊時帶有沈穩的脆響。
+                </p>
+                <p>
+                    內裡濕潤而充滿彈性，無花果的甘甜與酸種特有的微酸香氣在咀嚼中達到完美的平衡。
+                    適合搭配一支淺焙的耶加雪菲，享受純粹的午後時光。
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-6">
+                <div class="flex items-center gap-4">
+                    <span class="text-sm tracking-widest text-stone-500">數量</span>
+                    <div class="flex items-center border border-stone-300 rounded-sm">
+                        <button class="px-4 py-2 text-stone-400 hover:text-stone-800 transition-colors">-</button>
+                        <input type="text" value="1" class="w-12 text-center bg-transparent focus:outline-none font-sans text-sm" readonly>
+                        <button class="px-4 py-2 text-stone-400 hover:text-stone-800 transition-colors">+</button>
+                    </div>
+                </div>
+
+                <button class="w-full bg-stone-900 text-stone-50 py-4 tracking-[0.2em] text-sm hover:bg-stone-800 transition-colors mt-4">
+                    加入購物車
+                </button>
+            </div>
+
+            <div class="mt-16 border-t border-stone-200">
+                <details class="group py-4 border-b border-stone-200 cursor-pointer">
+                    <summary class="flex justify-between items-center font-medium tracking-widest text-sm text-stone-800 list-none">
+                        成分與保存
+                        <span class="transition group-open:rotate-180">+</span>
+                    </summary>
+                    <p class="text-stone-500 text-sm mt-4 leading-relaxed">
+                        法國 T65 麵粉、天然酸種酵母、水、海鹽、土耳其無花果乾。<br>
+                        常溫保存 2 天，切片冷凍可保存 14 天。回烤前請先在表面噴灑少許水分。
+                    </p>
+                </details>
+                <details class="group py-4 border-b border-stone-200 cursor-pointer">
+                    <summary class="flex justify-between items-center font-medium tracking-widest text-sm text-stone-800 list-none">
+                        出貨說明
+                        <span class="transition group-open:rotate-180">+</span>
+                    </summary>
+                    <p class="text-stone-500 text-sm mt-4 leading-relaxed">
+                        接單後排程手工製作，因發酵時間需 24-36 小時，下單後約需等待 3-5 個工作天。澎湖本地提供店取服務。
+                    </p>
+                </details>
+            </div>
+        </div>
+    </main>
+
+    <footer class="border-t border-stone-200 mt-24 py-12 text-center">
+        <div class="text-xs tracking-[0.2em] text-stone-400">
+            © 2026 880 COFFEE. ALL RIGHTS RESERVED.
+        </div>
+    </footer>
+
 </body>
 </html>
